@@ -80,3 +80,5 @@ NEXT_PUBLIC_SUPABASE_URL= NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY= PLAYWRIGHT_CHROM
 文字批量导入及核对已在后续开发分支实现；历史再次购买、共享购物清单、菜谱与烹饪扣减、规则推荐、完整 PWA、导出和图库上传留在后续阶段。邮件模板和跨设备确认仍按此前要求暂存待办。
 
 文字导入版本无需新 SQL。原库存版本已由用户反馈部署并录入采购成功；仍保留以上复现说明用于新环境。
+
+共享购物清单与历史再次购买已在后续分支实现，需追加第三份迁移；见 [SHOPPING_LIST.md](SHOPPING_LIST.md)。原手动采购事务不替换，迁移前仍可使用原功能。

@@ -104,4 +104,22 @@ describe("inventory server actions", () => {
       movement_note: "变质",
     });
   });
+  it("routes linked purchase rows to the atomic list-completion function", async () => {
+    const linked = {
+      ...payload,
+      items: [
+        {
+          ...payload.items[0],
+          shopping_item_id: key,
+          shopping_item_version: 3,
+        },
+      ],
+    };
+    await recordPurchase({}, form(linked));
+    expect(mocks.rpc).toHaveBeenCalledWith("record_purchase_from_list", {
+      request_id: key,
+      payload: linked,
+      shopping_links: [{ item_id: key, version: 3, line_number: 1 }],
+    });
+  });
 });

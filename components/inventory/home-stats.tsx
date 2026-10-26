@@ -18,9 +18,13 @@ function subscribe(callback: () => void) {
 export function HomeStats({
   lots,
   available,
+  shoppingCounts = null,
+  householdReady = false,
 }: {
   lots: StockLot[];
   available: boolean;
+  shoppingCounts?: { pending: number; unstocked: number } | null;
+  householdReady?: boolean;
 }) {
   const today = useSyncExternalStore(subscribe, localToday, () => "");
   const positive = lots.filter((l) => Number(l.current_quantity) > 0);
@@ -55,10 +59,14 @@ export function HomeStats({
     },
     {
       icon: ShoppingBasket,
-      title: "采购记录",
-      value: available ? "去记录" : "—",
-      note: "采购清单功能尚未开放",
-      href: "/shopping",
+      title: "待买需求",
+      value: shoppingCounts ? `${shoppingCounts.pending} 项` : "—",
+      note: shoppingCounts
+        ? `${shoppingCounts.unstocked} 项已买待入库`
+        : householdReady
+          ? "共享清单暂不可用"
+          : "登录入家后查看共享清单",
+      href: "/shopping/list",
       tone: "rose",
     },
   ];

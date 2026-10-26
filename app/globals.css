@@ -1458,3 +1458,32 @@ h3,
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.shopping-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+.shopping-card .form-stack input,
+.shopping-card .form-stack select {
+  min-width: 0;
+}
+.shopping-card > details {
+  margin-top: 16px;
+}
+.shopping-card > h2 {
+  margin: 12px 0;
+}
+.shopping-card .form-actions .button {
+  min-height: 44px;
+}
+@media (max-width: 767px) {
+  .shopping-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .shopping-card .form-actions {
+    flex-direction: column;
+  }
+}

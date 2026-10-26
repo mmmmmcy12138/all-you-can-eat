@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { kitchenContext } from "@/lib/kitchen/context";
 import { supabaseServer } from "@/lib/supabase/server";
 import { KitchenGate } from "@/components/inventory/kitchen-gate";
+import { DraftLauncher } from "@/components/shopping/draft-launcher";
+import type { PurchasePayload } from "@/lib/inventory/validation";
 import { formatQuantity } from "@/lib/inventory/quantities";
 export const dynamic = "force-dynamic";
 export default async function PurchaseDetail({
@@ -24,7 +26,9 @@ export default async function PurchaseDetail({
       .maybeSingle(),
     client
       .from("purchase_items")
-      .select("id,ingredient_id,quantity,unit,total_cost,ingredients(name)")
+      .select(
+        "id,ingredient_id,quantity,unit,total_cost,ingredients(name,category,base_unit)",
+      )
       .eq("household_id", context.householdId)
       .eq("purchase_id", id)
       .order("line_number")
@@ -61,6 +65,37 @@ export default async function PurchaseDetail({
         </div>
       </header>
       <section className="panel">
+        <h2>再买一次</h2>
+        <p className="form-hint">
+          仅复制食材和数量，不复制旧价格、采购日期或保质期；不会直接入库。已有草稿会保留并追加。
+        </p>
+        <DraftLauncher
+          draftKey={`ayce-purchase-${context.householdId}-${context.userId}`}
+          title="把这单加入新的采购核对"
+          payload={{
+            purchased_on: "",
+            store_name: purchase.data.store_name,
+            note: "",
+            items: items.data.map((item) => {
+              const food = item.ingredients as unknown as {
+                name: string;
+                category: PurchasePayload["items"][number]["category"];
+              } | null;
+              return {
+                ingredient_id: item.ingredient_id,
+                name: food?.name ?? "",
+                category: food?.category ?? "其他",
+                quantity: String(item.quantity),
+                unit: item.unit as PurchasePayload["items"][number]["unit"],
+                total_cost: "",
+                expires_on: "",
+                storage_location: "冷藏",
+              };
+            }),
+          }}
+        />
+      </section>
+      <section className="panel ledger-panel">
         <p>{purchase.data.note || "没有采购备注"}</p>
         <ul className="purchase-history">
           {items.data.map((item) => {

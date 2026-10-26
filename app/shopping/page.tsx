@@ -50,11 +50,16 @@ async function History(householdId: string) {
       );
     return (
       <>
+        <div className="form-actions">
+          <Link href="/shopping/list" className="button button-primary">
+            打开共享购物清单 →
+          </Link>
+        </div>
         <section className="together">
           <div>
             <h2>从一笔真实采购开始</h2>
             <p>
-              支持手动填写或粘贴文字，核对勾选后整单入库。共享购物清单将在后续开放。
+              先把待买需求放进两个人的共享清单，实际采购后再核对入库。也支持直接手动填写或粘贴文字。
             </p>
           </div>
           <Link href="/shopping/new" className="button button-primary">
