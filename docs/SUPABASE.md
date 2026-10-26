@@ -26,7 +26,20 @@ Authentication → URL Configuration：
 - Redirect URLs：添加该站点的 `https://你的域名/auth/callback`。
 - 若需要 Vercel Preview 注册确认，添加明确的 Preview 回调地址；不要将任意域名设为允许重定向。
 
-应用通过 SSR PKCE 的 `code` 回调交换会话，保持 Supabase 默认确认邮件里的 `ConfirmationURL`。从发起注册的同一浏览器打开邮件确认链接；在另一台设备打开可能缺少 PKCE verifier，需要回到原浏览器重试。部署站点之前可以先完成数据库配置，真实邮件与登录验收等站点可访问后再做。免费默认邮件服务可能有限流或收件人限制；正式使用时按 Supabase 提示配置自己的 SMTP。
+应用兼容默认 SSR PKCE 的 `code` 回调。默认邮件在其他浏览器打开时会缺少注册浏览器的 verifier；邮箱可能已确认，但自动登录无法完成，此时页面提示直接用邮箱密码登录，不需要重新注册。
+
+**推荐启用跨设备确认**：在此修复版本合并并部署后，进入 Authentication → Email Templates（部分界面位于 Notifications → Email）→ Confirm signup，将确认按钮链接改为：
+
+```html
+<a
+  href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=email"
+  >确认邮箱并登录 AYCE</a
+>
+```
+
+保留其他邮件文案即可，保存模板。Site URL 必须是实际 AYCE 正式站点。此方式由服务器使用 `verifyOtp` 验证单次 email token，无需注册浏览器的 PKCE verifier。回调仅接受 `type=email`，不将密码恢复或其他类型当作注册确认。过期、已使用或无效链接仍会被拒绝；绝不会因为链接参数直接信任用户身份。不要在聊天或日志粘贴完整确认链接。
+
+旧邮件不会随模板更新而改变，仍可确认后使用邮箱密码登录。新模板只有在新邮件中生效；确认后重复打开链接不代表需要重新注册。部署站点之前可以先完成数据库配置，真实邮件与登录验收等站点可访问后再做。免费默认邮件服务可能有限流或收件人限制；正式使用时按 Supabase 提示配置自己的 SMTP。
 
 ## 4. 云环境与 Vercel 变量
 

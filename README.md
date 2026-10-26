@@ -80,3 +80,7 @@ npm run test:e2e
 `npm run test:e2e` 在**未配置 Supabase 的构建**上验证桌面/手机导航、主题、错误回调和未配置提示；CI 不注入生产密钥。它不是已登录业务浏览器验收。配置托管项目后，按照 docs/SUPABASE.md 进行真实双账号验收。PGlite 单连接测试不覆盖多连接并发压力。
 
 本次 Phase 2 云端检查：Lint、类型检查、39 项 Vitest（含 20 项 PostgreSQL 权限测试）、生产构建与 8 项桌面/手机 Playwright 全部通过；生产依赖审计 0 漏洞。尚未连接托管 Supabase，尚未执行真实邮箱/双账号浏览器验收。两个阶段均在 feature 分支上，main 尚未合并；审查时先合并 Phase 1，再合并 Phase 2。
+
+## 邮箱跨设备确认修复
+
+默认 PKCE 邮件在另一浏览器打开时可能已经确认邮箱，却无法自动登录。回调现在区分浏览器校验缺失、过期链接和服务连接错误，并引导已确认用户直接登录。新增 email token hash 验证以支持跨设备确认；**部署修复后**按 [Supabase 文档](docs/SUPABASE.md#3-认证配置) 更新 Confirm signup 邮件模板才能启用。此变更不修改已有账号、家庭或数据库表。
