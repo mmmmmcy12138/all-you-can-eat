@@ -115,3 +115,57 @@ export async function adjustStock(
     return { error: "网络异常，尚未确认保存成功。请保留内容并重试。" };
   }
 }
+
+export async function clearInventory(
+  _: InventoryActionState,
+  form: FormData,
+): Promise<InventoryActionState> {
+  const requestId = String(form.get("request_id") ?? ""),
+    fingerprint = String(form.get("expected_fingerprint") ?? ""),
+    reason = String(form.get("clear_reason") ?? "").trim(),
+    confirmation = String(form.get("confirmation") ?? "");
+  if (
+    !/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(requestId) ||
+    !/^[a-f0-9]{64}$/.test(fingerprint)
+  )
+    return { error: "清空请求无效，请刷新冰箱后重试" };
+  if (confirmation !== "清空库存" || !reason || reason.length > 500)
+    return { error: "请填写清空原因，并输入“清空库存”确认" };
+  try {
+    const client = await supabaseServer();
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user) return { error: "请先登录" };
+    const { data, error } = await client.rpc("clear_inventory", {
+      request_id: requestId,
+      expected_fingerprint: fingerprint,
+      clear_reason: reason,
+      confirmation,
+    });
+    if (error)
+      return {
+        error:
+          error.code === "P0001"
+            ? error.message
+            : "清空尚未确认成功，请保留此页重试；若功能刚上线，请确认清空迁移已执行。",
+      };
+    if (
+      !data ||
+      typeof data.id !== "string" ||
+      !Number.isInteger(data.cleared_lots) ||
+      data.cleared_lots < 0
+    )
+      return { error: "清空响应无法确认，请保留原操作重试。" };
+    revalidatePath("/", "layout");
+    return {
+      resultId: data.id,
+      requestKey: requestId,
+      message: `已将 ${data.cleared_lots} 个批次的库存归零，并记录了清空流水。`,
+    };
+  } catch {
+    return {
+      error: "连接中断，尚未确认清空结果。请保留原操作重试，不要另建清空请求。",
+    };
+  }
+}

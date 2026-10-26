@@ -1487,3 +1487,30 @@ h3,
     flex-direction: column;
   }
 }
+.clear-stock-panel {
+  margin-top: 28px;
+  border-color: var(--rose);
+}
+.clear-stock-panel > details > summary {
+  color: var(--rose);
+  font-weight: 600;
+}
+.clear-stock-panel > details > p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+.clear-stock-panel .form-stack label {
+  margin-bottom: 16px;
+}
+.button-danger {
+  background: #aa5148;
+  color: #fff;
+}
+.button-danger:hover {
+  background: #93443c;
+}
+.button-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

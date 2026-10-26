@@ -16,6 +16,7 @@ import {
 import type { Ingredient } from "@/lib/inventory/types";
 import { Button } from "@/components/ui/button";
 import { PurchaseImport } from "./purchase-import";
+import { localPurchaseDate } from "@/lib/inventory/date";
 import type { ImportRow } from "@/lib/purchase-parser";
 type Draft = {
   requestId: string;
@@ -23,6 +24,7 @@ type Draft = {
   resultId?: string;
   selected?: boolean[];
   sourceLines?: number[];
+  purchaseDateTouched?: boolean;
 };
 const blank = () => ({
   ingredient_id: "",
@@ -38,6 +40,10 @@ function subscribe(callback: () => void) {
   window.addEventListener("ayce-purchase-draft", callback);
   return () => window.removeEventListener("ayce-purchase-draft", callback);
 }
+function subscribeDay(callback: () => void) {
+  const timer = window.setInterval(callback, 60000);
+  return () => window.clearInterval(timer);
+}
 export function PurchaseForm({
   ingredients,
   draftKey,
@@ -47,9 +53,15 @@ export function PurchaseForm({
   draftKey: string;
   initialRequestId: string;
 }) {
+  const today = useSyncExternalStore(subscribeDay, localPurchaseDate, () => "");
   const initial = JSON.stringify({
     requestId: initialRequestId,
-    payload: { purchased_on: "", store_name: "", note: "", items: [blank()] },
+    payload: {
+      purchased_on: today,
+      store_name: "",
+      note: "",
+      items: [blank()],
+    },
   } satisfies Draft);
   const [storageError, setStorageError] = useState(false);
   const serialized = useSyncExternalStore(
@@ -76,6 +88,13 @@ export function PurchaseForm({
   } catch {
     draft = JSON.parse(initial);
   }
+  if (
+    !draft.payload.purchased_on &&
+    !draft.purchaseDateTouched &&
+    !draft.resultId &&
+    today
+  )
+    draft = { ...draft, payload: { ...draft.payload, purchased_on: today } };
   const [state, action, pending] = useActionState(recordPurchase, {});
   function save(value: Draft) {
     try {
@@ -218,7 +237,12 @@ export function PurchaseForm({
             onClick={() =>
               save({
                 requestId: crypto.randomUUID(),
-                payload: { ...draft.payload, note: "", items: [blank()] },
+                payload: {
+                  ...draft.payload,
+                  purchased_on: localPurchaseDate(),
+                  note: "",
+                  items: [blank()],
+                },
               })
             }
           >
@@ -273,6 +297,7 @@ export function PurchaseForm({
                 onChange={(e) =>
                   save({
                     ...draft,
+                    purchaseDateTouched: true,
                     payload: { ...draft.payload, purchased_on: e.target.value },
                   })
                 }

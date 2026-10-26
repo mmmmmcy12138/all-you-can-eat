@@ -20,6 +20,13 @@ export async function readInventory(householdId: string) {
       ok: true as const,
       ingredients: data.ingredients as Ingredient[],
       lots: data.lots as StockLot[],
+      ...(typeof data.clear_fingerprint === "string" &&
+      typeof data.positive_lot_count === "number"
+        ? {
+            clearFingerprint: data.clear_fingerprint,
+            positiveLotCount: data.positive_lot_count,
+          }
+        : {}),
     };
   } catch {
     return {

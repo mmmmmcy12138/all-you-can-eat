@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
+import { ClearStock } from "@/components/inventory/clear-stock";
 import { kitchenContext } from "@/lib/kitchen/context";
 import { readInventory } from "@/lib/inventory/read";
 import { KitchenGate } from "@/components/inventory/kitchen-gate";
@@ -42,6 +44,20 @@ async function Content(householdId: string) {
       </section>
     );
   return (
-    <FridgeList ingredients={inventory.ingredients} lots={inventory.lots} />
+    <>
+      <FridgeList ingredients={inventory.ingredients} lots={inventory.lots} />
+      {inventory.clearFingerprint !== undefined &&
+      inventory.positiveLotCount !== undefined ? (
+        <ClearStock
+          fingerprint={inventory.clearFingerprint}
+          lotCount={inventory.positiveLotCount}
+          requestId={randomUUID()}
+        />
+      ) : (
+        <p className="form-hint">
+          清空库存功能需要先应用新增数据库迁移；日常采购与批次调整仍可使用。
+        </p>
+      )}
+    </>
   );
 }

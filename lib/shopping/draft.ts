@@ -5,6 +5,7 @@ export type PurchaseDraft = {
   resultId?: string;
   selected?: boolean[];
   sourceLines?: number[];
+  purchaseDateTouched?: boolean;
 };
 export function appendPurchaseDraft(
   current: PurchaseDraft | null,

@@ -26,8 +26,17 @@ export function FridgeList({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [expiry, setExpiry] = useState("");
+  const [showEmpty, setShowEmpty] = useState(false);
   const today = useSyncExternalStore(subscribe, localToday, () => "");
+  const inventoryEmpty = !lots.some((l) => Number(l.current_quantity) > 0);
   const filtered = ingredients
+    .filter(
+      (i) =>
+        showEmpty ||
+        lots.some(
+          (l) => l.ingredient_id === i.id && Number(l.current_quantity) > 0,
+        ),
+    )
     .filter(
       (i) =>
         i.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()) &&
@@ -77,6 +86,14 @@ export function FridgeList({
           </select>
         </label>
       </div>
+      <label className="import-selection">
+        <input
+          type="checkbox"
+          checked={showEmpty}
+          onChange={(event) => setShowEmpty(event.target.checked)}
+        />
+        显示零库存食材与历史批次
+      </label>
       <p className="form-hint">
         临期按当前设备日期计算。总库存包含所有批次，过期食材会另行标记，不等于推荐食用量。
       </p>
@@ -124,15 +141,19 @@ export function FridgeList({
         <section className="panel empty-state">
           <h2>
             {ingredients.length
-              ? "没有符合条件的食材"
+              ? inventoryEmpty
+                ? "当前冰箱没有库存"
+                : "没有符合条件的食材"
               : "冰箱准备好了，等你放入第一份新鲜"}
           </h2>
           <p>
             {ingredients.length
-              ? "试试其他搜索词或筛选条件。"
+              ? inventoryEmpty
+                ? "采购历史仍保留，可打开上方零库存开关查看，或开始新采购。"
+                : "试试其他搜索词或筛选条件。"
               : "录入采购后，这里会显示真实库存。"}
           </p>
-          {!ingredients.length && (
+          {inventoryEmpty && (
             <Link className="button button-primary" href="/shopping/new">
               记一笔采购
             </Link>

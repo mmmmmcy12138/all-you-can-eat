@@ -114,6 +114,7 @@ try {
     "202610260001_households.sql",
     "202610260002_inventory.sql",
     "202610260003_shopping_list.sql",
+    "202610260004_clear_inventory.sql",
   ])
     sql(
       readFileSync(
@@ -288,8 +289,45 @@ try {
   console.log(
     "PASS linked-food validation failure rolls back stock and shopping fulfillment together",
   );
+  const clearSnapshot = JSON.parse(
+    sql(asUser(A, "select public.read_inventory()")).split("\n").at(-1),
+  );
+  const clearKeys = [randomUUID(), randomUUID()];
+  const clearSQL = (key) =>
+    `select public.clear_inventory('${key}','${clearSnapshot.clear_fingerprint}','test fixture cleanup','清空库存')`;
+  const clears = await Promise.allSettled([
+    asyncSQL(asUser(A, clearSQL(clearKeys[0]) + ";select pg_sleep(0.3)")),
+    asyncSQL(asUser(B, clearSQL(clearKeys[1]))),
+  ]);
+  assert.equal(clears.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(clears.filter((r) => r.status === "rejected").length, 1);
+  assert.equal(
+    sql("select count(*) from public.stock_lots where current_quantity>0"),
+    "0",
+  );
   console.log(
-    "8 real PostgreSQL integration checks passed; fixture container will be removed.",
+    "PASS concurrent distinct clear requests accept one snapshot and reject the stale writer",
+  );
+  const winner = clears.findIndex((result) => result.status === "fulfilled");
+  sql(
+    asUser(
+      A,
+      purchase(randomUUID(), {
+        ...payload,
+        items: [{ ...payload.items[0], quantity: "3" }],
+      }),
+    ),
+  );
+  sql(asUser(B, clearSQL(clearKeys[winner])));
+  assert.equal(
+    sql("select sum(current_quantity) from public.stock_lots"),
+    "3.000",
+  );
+  console.log(
+    "PASS clear retry does not erase purchases arriving after the original clear",
+  );
+  console.log(
+    "10 real PostgreSQL integration checks passed; fixture container will be removed.",
   );
 } finally {
   if (started) docker(["rm", "-f", name]);

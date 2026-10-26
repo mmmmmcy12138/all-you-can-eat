@@ -25,6 +25,7 @@ afterEach(() => {
 });
 async function complete() {
   const user = userEvent.setup();
+  await user.clear(screen.getByLabelText("采购日期"));
   await user.type(screen.getByLabelText("采购日期"), "2026-10-26");
   await user.type(screen.getByLabelText("食材名称"), "鸡蛋");
   await user.type(screen.getByLabelText("入库数量"), "12");
