@@ -37,7 +37,8 @@ export async function authenticate(
         return { error: "注册未完成，请检查邮箱格式、密码要求或稍后重试。" };
       if (!data.session)
         return {
-          message: "请检查邮箱中的确认链接。如账号已存在，请直接登录。",
+          message:
+            "请检查邮箱中的确认链接。若在其他设备确认后未自动登录，可回到此处直接登录，无需重新注册。如账号已存在，请直接登录。",
         };
     } else {
       const { error } = await client.auth.signInWithPassword(parsed.data);

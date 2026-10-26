@@ -65,8 +65,22 @@ test("auth and invite routes show configuration requirements without fake succes
   await expect(page.getByRole("button", { name: "加入共享厨房" })).toHaveCount(
     0,
   );
-  const response = await page.goto("/auth/callback?code=invalid");
+  const response = await page.goto("/auth/callback");
   expect(response?.ok()).toBe(true);
   await expect(page).toHaveURL(/\/login\?error=confirmation$/);
-  await expect(page.getByRole("alert").filter({ hasText: "邮箱确认链接无效" })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "无法完成此次自动登录" }),
+  ).toBeVisible();
+});
+
+test("cross-device confirmation guides users to sign in without registering again", async ({
+  page,
+}) => {
+  await page.goto("/login?notice=confirmation-signin");
+  await expect(
+    page.getByRole("status").filter({ hasText: "无需重新注册" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("邮箱确认链接无效", { exact: false }),
+  ).toHaveCount(0);
 });

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function Login({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; notice?: string }>;
 }) {
   const configured = !!supabaseConfig();
   if (configured) {
@@ -23,7 +23,7 @@ export default async function Login({
     }
     if (loggedIn) redirect("/profile");
   }
-  const { error } = await searchParams;
+  const { error, notice } = await searchParams;
   return (
     <>
       <header className="page-header">
@@ -34,9 +34,16 @@ export default async function Login({
         </div>
       </header>
       <section className="panel auth-panel">
+        {notice === "confirmation-signin" && (
+          <p role="status" className="form-success">
+            当前浏览器无法自动登录。若邮箱已确认，请直接用注册邮箱和密码登录，无需重新注册。也可以回到注册时的浏览器打开确认邮件。
+          </p>
+        )}
         {error && (
           <p role="alert" className="form-error">
-            邮箱确认链接无效、已过期或不属于当前浏览器，请重新注册确认或登录。
+            {error === "auth-service"
+              ? "认证服务暂时无法连接，请稍后重试。"
+              : "无法完成此次自动登录，链接可能已过期或已使用。若邮箱已确认，请直接登录，无需重新注册。"}
           </p>
         )}
         {configured ? (
