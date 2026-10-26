@@ -37,6 +37,13 @@ const cost = z
 export const purchaseItem = z
   .object({
     ingredient_id: z.union([z.uuid(), z.literal("")]),
+    shopping_item_id: z.uuid().optional(),
+    shopping_item_version: z
+      .number()
+      .int()
+      .positive()
+      .max(Number.MAX_SAFE_INTEGER)
+      .optional(),
     name: z.string().trim().max(80, "名称最多 80 字"),
     category: z.enum(categories),
     quantity,
@@ -58,6 +65,15 @@ export const purchaseSchema = z
   })
   .superRefine((value, ctx) => {
     value.items.forEach((item, index) => {
+      if (
+        (item.shopping_item_id && !item.shopping_item_version) ||
+        (!item.shopping_item_id && item.shopping_item_version)
+      )
+        ctx.addIssue({
+          code: "custom",
+          message: "清单关联不完整，请重新核对",
+          path: ["items", index, "shopping_item_id"],
+        });
       if (item.expires_on && item.expires_on < value.purchased_on)
         ctx.addIssue({
           code: "custom",

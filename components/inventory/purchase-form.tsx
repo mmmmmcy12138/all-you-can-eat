@@ -116,7 +116,19 @@ export function PurchaseForm({
       payload: {
         ...draft.payload,
         items: draft.payload.items.map((row, i) =>
-          i === index ? { ...row, ...patch } : row,
+          i === index
+            ? {
+                ...row,
+                ...patch,
+                ...(patch.ingredient_id !== undefined ||
+                patch.name !== undefined
+                  ? {
+                      shopping_item_id: undefined,
+                      shopping_item_version: undefined,
+                    }
+                  : {}),
+              }
+            : row,
         ),
       },
     });
@@ -329,6 +341,23 @@ export function PurchaseForm({
                   </Button>
                 )}
               </div>
+              {row.shopping_item_id && (
+                <p className="form-hint">
+                  来自共享购物清单；确认入库会同步更新剩余需求。修改食材会解除关联。若清单已变化，请先核对最新需求；解除关联后入库不会更新清单。
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() =>
+                      updateItem(index, {
+                        shopping_item_id: undefined,
+                        shopping_item_version: undefined,
+                      })
+                    }
+                  >
+                    解除清单关联
+                  </button>
+                </p>
+              )}
               <label className="checkbox-label import-selection">
                 <input
                   type="checkbox"

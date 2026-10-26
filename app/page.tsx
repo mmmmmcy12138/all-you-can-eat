@@ -11,15 +11,34 @@ import { Button } from "@/components/ui/button";
 import { Today } from "@/components/today";
 import { EmptyState } from "@/components/empty-state";
 import { kitchenContext } from "@/lib/kitchen/context";
+import { supabaseServer } from "@/lib/supabase/server";
 import { readInventory } from "@/lib/inventory/read";
 import { KitchenGate } from "@/components/inventory/kitchen-gate";
 import { HomeStats } from "@/components/inventory/home-stats";
 export const dynamic = "force-dynamic";
 export default async function Home() {
   const context = await kitchenContext();
-  const inventory =
+  const [inventory, shopping] =
     context.status === "ready"
-      ? await readInventory(context.householdId)
+      ? await Promise.all([
+          readInventory(context.householdId),
+          (await supabaseServer()).rpc("read_shopping_list"),
+        ])
+      : [null, null];
+  const shoppingCounts =
+    shopping &&
+    !shopping.error &&
+    shopping.data?.household_id ===
+      (context.status === "ready" ? context.householdId : null) &&
+    Array.isArray(shopping.data?.active)
+      ? {
+          pending: shopping.data.active.filter(
+            (item: { status: string }) => item.status === "open",
+          ).length,
+          unstocked: shopping.data.active.filter(
+            (item: { status: string }) => item.status === "purchased",
+          ).length,
+        }
       : null;
   return (
     <>
@@ -115,6 +134,8 @@ export default async function Home() {
         </section>
       )}
       <HomeStats
+        shoppingCounts={shoppingCounts}
+        householdReady={context.status === "ready"}
         lots={inventory?.ok ? inventory.lots : []}
         available={context.status === "ready" && !!inventory?.ok}
       />

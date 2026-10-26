@@ -93,6 +93,7 @@ test("inventory pages never offer writes without a configured household", async 
 }) => {
   for (const route of [
     "/shopping/new",
+    "/shopping/list",
     "/fridge/00000000-0000-4000-8000-000000000001",
     "/shopping/history/00000000-0000-4000-8000-000000000001",
   ]) {

@@ -113,6 +113,7 @@ try {
   for (const file of [
     "202610260001_households.sql",
     "202610260002_inventory.sql",
+    "202610260003_shopping_list.sql",
   ])
     sql(
       readFileSync(
@@ -190,8 +191,105 @@ try {
   console.log(
     "PASS real PostgreSQL rolls back the entire invalid multi-line purchase",
   );
+  const shoppingPayload = (quantity) =>
+    JSON.stringify({
+      ingredient_id: "",
+      name: "测试鸡蛋",
+      category: "蛋奶",
+      unit: "个",
+      quantity,
+    });
+  const addList = (request, quantity) =>
+    `select public.add_shopping_item('${request}','${shoppingPayload(quantity)}'::jsonb)`;
+  const merges = await Promise.all([
+    asyncSQL(asUser(A, addList(randomUUID(), "12") + ";select pg_sleep(0.3)")),
+    asyncSQL(asUser(B, addList(randomUUID(), "24"))),
+  ]);
+  assert.equal(lastUUID(merges[0]), lastUUID(merges[1]));
+  const sid = lastUUID(merges[0]);
+  assert.equal(
+    sql(`select quantity from public.shopping_items where id='${sid}'`),
+    "24.000",
+  );
   console.log(
-    "4 real PostgreSQL integration checks passed; fixture container will be removed.",
+    "PASS concurrent shopping additions merge to max demand, not duplicate purchases",
+  );
+  const listVersion = sql(
+    `select version from public.shopping_items where id='${sid}'`,
+  );
+  const listPayload = {
+    ...payload,
+    items: [
+      {
+        ...payload.items[0],
+        name: "测试鸡蛋",
+        category: "蛋奶",
+        unit: "个",
+        quantity: "24",
+      },
+    ],
+  };
+  const buyList = (request, data = listPayload) =>
+    `select public.record_purchase_from_list('${request}','${JSON.stringify(data)}'::jsonb,'${JSON.stringify([{ item_id: sid, version: Number(listVersion), line_number: 1 }])}'::jsonb)`;
+  const purchasesBefore = Number(sql("select count(*) from public.purchases"));
+  const completions = await Promise.allSettled([
+    asyncSQL(asUser(A, buyList(randomUUID()) + ";select pg_sleep(0.3)")),
+    asyncSQL(asUser(B, buyList(randomUUID()))),
+  ]);
+  assert.equal(completions.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(completions.filter((r) => r.status === "rejected").length, 1);
+  assert.equal(
+    Number(sql("select count(*) from public.purchases")),
+    purchasesBefore + 1,
+  );
+  assert.equal(
+    sql(`select stocked_quantity from public.shopping_items where id='${sid}'`),
+    "24.000",
+  );
+  console.log(
+    "PASS concurrent completion with different request IDs stocks one shopping demand once",
+  );
+  const nextSid = lastUUID(sql(asUser(A, addList(randomUUID(), "12"))));
+  const changeList = (request, action, quantity) =>
+    `select public.change_shopping_item('${request}','${nextSid}',1,'${action}',${quantity === null ? "null" : "'" + quantity + "'"})`;
+  const changes = await Promise.allSettled([
+    asyncSQL(
+      asUser(
+        A,
+        changeList(randomUUID(), "purchased", null) + ";select pg_sleep(0.3)",
+      ),
+    ),
+    asyncSQL(asUser(B, changeList(randomUUID(), "quantity", "20"))),
+  ]);
+  assert.equal(changes.filter((r) => r.status === "fulfilled").length, 1);
+  assert.equal(changes.filter((r) => r.status === "rejected").length, 1);
+  console.log(
+    "PASS concurrent shopping edits reject stale version rather than overwrite",
+  );
+  const wrongBefore = sql("select count(*) from public.purchases");
+  const nextVersion = sql(
+    `select version from public.shopping_items where id='${nextSid}'`,
+  );
+  await assert.rejects(
+    asyncSQL(
+      asUser(
+        A,
+        `select public.record_purchase_from_list('${randomUUID()}','${JSON.stringify({ ...listPayload, items: [{ ...listPayload.items[0], name: "错误食材" }] })}'::jsonb,'${JSON.stringify([{ item_id: nextSid, version: Number(nextVersion), line_number: 1 }])}'::jsonb)`,
+      ),
+    ),
+  );
+  assert.equal(sql("select count(*) from public.purchases"), wrongBefore);
+  assert.equal(
+    sql(
+      `select stocked_quantity from public.shopping_items where id='${nextSid}'`,
+    ),
+    "0.000",
+  );
+  console.log(
+    "PASS linked-food validation failure rolls back stock and shopping fulfillment together",
+  );
+  console.log(
+    "8 real PostgreSQL integration checks passed; fixture container will be removed.",
   );
 } finally {
   if (started) docker(["rm", "-f", name]);

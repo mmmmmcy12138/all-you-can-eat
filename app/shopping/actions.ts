@@ -36,10 +36,25 @@ export async function recordPurchase(
       data: { user },
     } = await client.auth.getUser();
     if (!user) return { error: "请先登录再入库。" };
-    const { data, error } = await client.rpc("record_purchase", {
-      request_id: requestId,
-      payload: parsed.data,
-    });
+    const links = parsed.data.items.flatMap((item, index) =>
+      item.shopping_item_id
+        ? [
+            {
+              item_id: item.shopping_item_id,
+              version: item.shopping_item_version,
+              line_number: index + 1,
+            },
+          ]
+        : [],
+    );
+    const { data, error } = await client.rpc(
+      links.length ? "record_purchase_from_list" : "record_purchase",
+      {
+        request_id: requestId,
+        payload: parsed.data,
+        ...(links.length ? { shopping_links: links } : {}),
+      },
+    );
     if (error)
       return {
         error:
@@ -50,6 +65,7 @@ export async function recordPurchase(
     revalidatePath("/");
     revalidatePath("/fridge");
     revalidatePath("/shopping");
+    revalidatePath("/shopping/list");
     return {
       message: "采购已入库，库存与流水已一起保存。",
       resultId: data,
