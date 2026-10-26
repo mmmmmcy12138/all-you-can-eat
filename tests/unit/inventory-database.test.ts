@@ -2,6 +2,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from "vitest";
+import { parsePurchaseText } from "../../lib/purchase-parser";
+import type { Ingredient } from "../../lib/inventory/types";
 const A = "00000000-0000-4000-8000-000000000001",
   B = "00000000-0000-4000-8000-000000000002",
   C = "00000000-0000-4000-8000-000000000003";
@@ -469,5 +471,38 @@ describe("transactional procurement and inventory", () => {
       adjust(batch.id, "200", "ADJUSTMENT", stale, B),
     ).rejects.toThrow(/另一位成员/);
     expect((await lot()).current_quantity).toBe("250.000");
+  });
+  it("imports parsed IDs and scaled quantities through the existing atomic purchase function", async () => {
+    await buy();
+    const ingredients = (
+      await db.query<Ingredient>(
+        "select id,name,name_en,category,base_unit from public.ingredients",
+      )
+    ).rows;
+    const parsed = parsePurchaseText(
+      "牛肉 | 0.68 | kg | 11.49\n鸡蛋 | 12 | 个 | 4.99",
+      ingredients,
+    );
+    expect(parsed.issues).toEqual([]);
+    const data = payload(parsed.rows.map((row) => row.item));
+    const key = randomUUID();
+    const id = await buy(data, key);
+    expect(await buy(data, key, B)).toBe(id);
+    expect((await counts()).ingredients).toBe(2);
+    expect((await counts()).purchases).toBe(2);
+    const beef = (
+      await db.query<{ total: string }>(
+        "select sum(current_quantity) as total from public.stock_lots where ingredient_id=(select id from public.ingredients where name='牛肉')",
+      )
+    ).rows[0];
+    expect(beef.total).toBe("980.000");
+    expect(
+      (
+        await db.query<{ total_cost: string }>(
+          "select total_cost from public.purchase_items where purchase_id=$1 and line_number=1",
+          [id],
+        )
+      ).rows[0].total_cost,
+    ).toBe("11.49");
   });
 });

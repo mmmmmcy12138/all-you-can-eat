@@ -1363,3 +1363,98 @@ h3,
 .filter-bar select:disabled {
   opacity: 0.6;
 }
+.import-panel {
+  margin-bottom: 24px;
+}
+.import-label {
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  margin: 18px 0;
+}
+.import-label textarea {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  line-height: 1.9;
+  resize: vertical;
+  min-height: 160px;
+}
+.import-label textarea:focus-visible {
+  outline: 2px solid var(--primary-strong);
+  outline-offset: 3px;
+}
+.import-results {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.import-results > .form-error {
+  margin: 14px 0;
+}
+.import-results ul {
+  padding-left: 20px;
+}
+.import-results .import-preview {
+  padding: 0;
+  list-style: none;
+  margin: 15px 0;
+}
+.import-preview li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.import-preview li > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.import-preview p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.review-title {
+  margin-top: 30px;
+}
+.import-selection {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  min-height: 44px;
+}
+.import-selection input {
+  width: 22px;
+  height: 22px;
+}
+.purchase-row > fieldset:disabled {
+  opacity: 0.5;
+}
+.import-panel .form-success {
+  margin-top: 14px;
+}
+.import-results .form-error li {
+  margin-top: 6px;
+}
+.import-panel > fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.import-panel > fieldset:disabled {
+  opacity: 0.65;
+}
+.import-results {
+  overflow-wrap: anywhere;
+}
+.import-preview strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

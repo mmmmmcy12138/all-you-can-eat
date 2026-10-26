@@ -1,6 +1,7 @@
 export type Ingredient = {
   id: string;
   name: string;
+  name_en?: string | null;
   category: string;
   base_unit: string;
 };
