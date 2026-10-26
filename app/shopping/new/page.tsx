@@ -12,7 +12,7 @@ export default async function NewPurchase() {
         <div>
           <span className="eyebrow">BRING GOOD THINGS HOME</span>
           <h1>记一笔采购</h1>
-          <p>新鲜入库，也把每一笔记清楚。</p>
+          <p>手动填写或粘贴小票文字，核对后一次性入库。</p>
         </div>
       </header>
       {context.status !== "ready" ? (

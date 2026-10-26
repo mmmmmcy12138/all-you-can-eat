@@ -54,7 +54,7 @@ async function History(householdId: string) {
           <div>
             <h2>从一笔真实采购开始</h2>
             <p>
-              支持手动多行入库、价格与批次记录。文字批量导入和共享购物清单将在后续开放。
+              支持手动填写或粘贴文字，核对勾选后整单入库。共享购物清单将在后续开放。
             </p>
           </div>
           <Link href="/shopping/new" className="button button-primary">
