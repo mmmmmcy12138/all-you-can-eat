@@ -9,7 +9,10 @@ test("all five pages work with responsive navigation and honest empty states", a
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "把每一餐",
   );
-  await expect(page.getByText("待连接厨房", { exact: false })).toHaveCount(4);
+  await expect(page.getByText("待连接厨房", { exact: false })).toHaveCount(0);
+  await expect(
+    page.getByText("尚未配置厨房连接", { exact: false }),
+  ).toBeVisible();
   const nav = page.getByRole("navigation", {
     name: isMobile ? "手机主导航" : "桌面主导航",
   });
@@ -83,4 +86,22 @@ test("cross-device confirmation guides users to sign in without registering agai
   await expect(
     page.getByText("邮箱确认链接无效", { exact: false }),
   ).toHaveCount(0);
+});
+
+test("inventory pages never offer writes without a configured household", async ({
+  page,
+}) => {
+  for (const route of [
+    "/shopping/new",
+    "/fridge/00000000-0000-4000-8000-000000000001",
+    "/shopping/history/00000000-0000-4000-8000-000000000001",
+  ]) {
+    await page.goto(route);
+    await expect(
+      page.getByText("尚未配置厨房连接", { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "确认整单入库" }),
+    ).toHaveCount(0);
+  }
 });
